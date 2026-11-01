@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
+dist/
+build/
+# generated artifacts (reproduce via demo.sh / gen+train+eval)
+data/customers.csv
+models/model.joblib
+eval/report.json
+src/static/ui.html
