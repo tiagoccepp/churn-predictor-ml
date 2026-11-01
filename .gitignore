@@ -10,8 +10,5 @@ htmlcov/
 .DS_Store
 dist/
 build/
-# generated artifacts (reproduce via demo.sh / gen+train+eval)
-data/customers.csv
-models/model.joblib
-eval/report.json
-src/static/ui.html
+# NOTE: generated artifacts (customers.csv, model.joblib, report.json, ui.html)
+# are TRACKED on purpose: fresh clone + ./demo.sh must work with zero train step.
