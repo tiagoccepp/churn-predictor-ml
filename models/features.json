@@ -1,0 +1,17 @@
+{
+  "numeric": [
+    "tenure_months",
+    "monthly_spend",
+    "support_tickets",
+    "late_payments"
+  ],
+  "categorical": [
+    "contract_type"
+  ],
+  "target": "churn",
+  "contract_values": [
+    "month-to-month",
+    "one-year",
+    "two-year"
+  ]
+}
