@@ -1,0 +1,8 @@
+# Render Blueprint: one-click deploy (free tier OK).
+# No env needed: the trained model ships inside the image.
+services:
+  - type: web
+    name: churn-predictor-ml
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health

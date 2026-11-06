@@ -6,6 +6,10 @@ from a logistic-regression surrogate).
 
 ![demo UI](docs/img/ui.png)
 
+**Try it now (no install):** [live in-browser demo](https://tiagoccepp.github.io/churn-predictor-ml/) — the real trained model runs 100% in your browser via ONNX, zero backend.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tiagoccepp/churn-predictor-ml)
+
 ## Why calibration?
 
 Raw classifiers rank well but their probabilities lie — a "70% churn risk" that
