@@ -20,11 +20,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from src.ratelimit import RateLimitMiddleware
+
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_PATH = ROOT / "models" / "model.joblib"
 REPORT_PATH = ROOT / "eval" / "report.json"
 
 app = FastAPI(title="Churn Predictor ML", version="0.1.0")
+app.add_middleware(RateLimitMiddleware, prefixes=("/score",))
 
 _bundle: dict[str, Any] | None = None
 
