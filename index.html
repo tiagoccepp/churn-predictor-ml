@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0B0F14">
+<title>Churn Predictor ML — live in-browser demo</title>
+<style>
+@font-face{font-family:'Sora';font-weight:700;font-style:normal;font-display:swap;src:url('fonts/Sora-700.woff2') format('woff2');}
+@font-face{font-family:'Sora';font-weight:800;font-style:normal;font-display:swap;src:url('fonts/Sora-800.woff2') format('woff2');}
+@font-face{font-family:'PublicSans';font-weight:400;font-style:normal;font-display:swap;src:url('fonts/PublicSans-400.woff2') format('woff2');}
+@font-face{font-family:'PublicSans';font-weight:600;font-style:normal;font-display:swap;src:url('fonts/PublicSans-600.woff2') format('woff2');}
+@font-face{font-family:'JetBrainsMono';font-weight:400;font-style:normal;font-display:swap;src:url('fonts/JetBrainsMono-400.woff2') format('woff2');}
+@font-face{font-family:'JetBrainsMono';font-weight:600;font-style:normal;font-display:swap;src:url('fonts/JetBrainsMono-600.woff2') format('woff2');}
+:root{
+  --bg:#0B0F14; --panel:#10161D; --raised:#151D26;
+  --line:rgba(232,237,242,.09); --line-strong:rgba(232,237,242,.16);
+  --text:#E8EDF2; --muted:#93A1B0; --faint:#5D6B7A;
+  --acc:#2DD4BF; --risk:#E5A13D;
+  --font-disp:'Sora',system-ui,sans-serif; --font-body:'PublicSans',system-ui,sans-serif; --font-mono:'JetBrainsMono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.55;min-height:100vh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:.7rem;padding:.85rem 1.3rem;border-bottom:1px solid var(--line);background:rgba(11,15,20,.92);backdrop-filter:blur(8px)}
+header .mk{width:34px;height:34px;border-radius:9px;background:var(--raised);border:1px solid var(--line-strong);display:grid;place-items:center;color:var(--acc);font-size:1rem;flex:none}
+header h1{font-family:var(--font-disp);font-size:1rem;font-weight:800;white-space:nowrap}
+header h1 span{color:var(--faint);font-weight:400}
+.chips{margin-left:auto;display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.2rem .7rem;background:var(--panel);white-space:nowrap}
+.chip.live{color:var(--acc);border-color:rgba(45,212,191,.35)}
+.chip.live i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-right:.4rem;animation:pl 2s infinite}
+@keyframes pl{50%{opacity:.35}}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;padding:1.1rem 1.3rem;max-width:1240px;width:100%;margin:0 auto}
+@media(max-width:920px){main{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){header{padding:.7rem .9rem}header h1{font-size:.8rem}header h1 span{display:none}.chip:not(.live){display:none}.chip{font-size:.65rem;padding:.15rem .55rem}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:1.1rem 1.2rem;min-width:0}
+.panel h2{font-family:var(--font-disp);font-size:.78rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.9rem}
+@media(max-width:560px){.presets{grid-template-columns:1fr 1fr}}
+.pbtn{background:var(--raised);border:1px solid var(--line);border-radius:9px;padding:.5rem .6rem;text-align:left;cursor:pointer;color:var(--text);font-family:var(--font-body);transition:border-color .15s}
+.pbtn:hover{border-color:var(--acc)}
+.pbtn b{display:block;font-size:.82rem}
+.pbtn small{font-family:var(--font-mono);font-size:.68rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.8rem}
+.fld label{display:block;font-family:var(--font-mono);font-size:.68rem;color:var(--faint);margin-bottom:.25rem;letter-spacing:.03em}
+.fld input,.fld select{width:100%;background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:.92rem;padding:.5rem .65rem}
+.fld input:focus,.fld select:focus{outline:none;border-color:var(--acc)}
+.scorebtn{width:100%;background:var(--acc);color:#06251f;border:0;border-radius:9px;font-family:var(--font-body);font-weight:700;font-size:.95rem;padding:.68rem;cursor:pointer;transition:filter .15s}
+.scorebtn:hover{filter:brightness(1.08)}
+.scorebtn:disabled{opacity:.55;cursor:wait}
+.result{display:flex;gap:1rem;align-items:center;margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--line-strong)}
+.result[hidden]{display:none}
+.gauge{flex:none;position:relative;width:132px;height:132px}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .gv{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.gauge .gv b{font-family:var(--font-disp);font-size:1.5rem;font-weight:800}
+.gauge .gv small{display:block;font-family:var(--font-mono);font-size:.62rem;color:var(--faint)}
+.vlabel{font-family:var(--font-mono);font-size:.7rem;font-weight:600;border-radius:6px;padding:.18rem .6rem;letter-spacing:.04em}
+.vlabel.churn{background:rgba(229,161,61,.14);color:var(--risk);border:1px solid rgba(229,161,61,.4)}
+.vlabel.stay{background:rgba(45,212,191,.12);color:var(--acc);border:1px solid rgba(45,212,191,.4)}
+.factors{flex:1;min-width:0;display:flex;flex-direction:column;gap:.45rem}
+.factor{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.45rem .65rem;font-size:.8rem}
+.factor .fr{display:flex;justify-content:space-between;gap:.5rem}
+.factor .fn{font-weight:600}
+.factor .fv{font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+.factor .bar{height:5px;border-radius:3px;background:var(--raised);margin-top:.35rem;overflow:hidden}
+.factor .bar i{display:block;height:100%;border-radius:3px}
+.factor.up .bar i{background:var(--risk)}
+.factor.dn .bar i{background:var(--acc);margin-left:auto}
+.factor .ef{font-family:var(--font-mono);font-size:.65rem;color:var(--faint)}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.9rem}
+@media(max-width:560px){.mgrid{grid-template-columns:1fr 1fr}}
+.metric{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:.55rem .7rem}
+.metric small{font-family:var(--font-mono);font-size:.64rem;color:var(--faint);display:block;letter-spacing:.03em}
+.metric b{font-family:var(--font-disp);font-size:1.25rem;font-weight:800}
+.metric b.t{color:var(--acc)}
+.gates{display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:.9rem}
+.gate{font-family:var(--font-mono);font-size:.7rem;border-radius:6px;padding:.22rem .65rem;border:1px solid rgba(45,212,191,.4);color:var(--acc);background:rgba(45,212,191,.08)}
+.gate.fail{border-color:rgba(229,161,61,.4);color:var(--risk);background:rgba(229,161,61,.08)}
+.calrow{display:grid;grid-template-columns:4.2rem 1fr 3rem;gap:.5rem;align-items:center;font-family:var(--font-mono);font-size:.66rem;color:var(--muted);margin-bottom:.28rem}
+.calrow .cb{position:relative;height:8px;background:var(--raised);border-radius:4px}
+.calrow .cb i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--acc);opacity:.85}
+.calrow .cb u{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--text);text-decoration:none}
+.calrow .cn{text-align:right;color:var(--faint)}
+.collabel{display:flex;gap:1rem;font-family:var(--font-mono);font-size:.64rem;color:var(--faint);margin-bottom:.4rem}
+.collabel b.t{color:var(--acc)} .collabel b.w{color:var(--text)}
+footer{border-top:1px solid var(--line);padding:.8rem 1.3rem;font-family:var(--font-mono);font-size:.72rem;color:var(--faint)}
+#toasts{position:fixed;right:1.1rem;bottom:1.1rem;display:flex;flex-direction:column;gap:.5rem;z-index:9;max-width:min(340px,90vw)}
+.toast{background:var(--raised);border:1px solid var(--line-strong);border-left:3px solid var(--acc);border-radius:8px;padding:.6rem .9rem;font-size:.82rem;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.warn{border-left-color:var(--risk)}
+.empty{color:var(--faint);font-size:.85rem;border:1px dashed var(--line-strong);border-radius:9px;padding:1.2rem;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="mk">◆</div>
+  <h1>Churn Predictor ML <span>live demo</span></h1>
+  <div class="chips"><span class="chip live"><i></i>in-browser ONNX</span><span class="chip" id="c-auc">AUC …</span><span class="chip">zero backend</span></div>
+</header>
+<main>
+  <section class="panel" aria-label="Score a customer">
+    <h2>Score a customer</h2>
+    <div class="presets">
+      <button class="pbtn" data-p="risk"><b>At-risk</b><small>4 mo · 5 tickets</small></button>
+      <button class="pbtn" data-p="loyal"><b>Loyal</b><small>44 mo · 2-yr deal</small></button>
+      <button class="pbtn" data-p="new"><b>New signup</b><small>1 mo · monthly</small></button>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label>TENURE (MONTHS)</label><input id="f-tenure" type="number" min="0" max="120" value="4"></div>
+      <div class="fld"><label>MONTHLY SPEND ($)</label><input id="f-spend" type="number" min="0" max="10000" step="0.5" value="82.5"></div>
+      <div class="fld"><label>SUPPORT TICKETS</label><input id="f-tickets" type="number" min="0" max="100" value="5"></div>
+      <div class="fld"><label>LATE PAYMENTS</label><input id="f-late" type="number" min="0" max="100" value="2"></div>
+    </div>
+    <div class="fld" style="margin-bottom:.8rem"><label>CONTRACT TYPE</label>
+      <select id="f-contract"><option>month-to-month</option><option>one-year</option><option>two-year</option></select>
+    </div>
+    <button class="scorebtn" id="btn" disabled>Loading model…</button>
+    <div class="result" id="result" hidden>
+      <div class="gauge">
+        <svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="54" fill="none" stroke="#1B242E" stroke-width="11"/><circle id="arc" cx="66" cy="66" r="54" fill="none" stroke="#2DD4BF" stroke-width="11" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"/></svg>
+        <div class="gv"><div><b id="gprob">–</b><small>churn prob.</small></div></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <span class="vlabel churn" id="vlabel">…</span>
+        <div class="factors" id="factors" style="margin-top:.6rem"></div>
+      </div>
+    </div>
+    <div class="empty" id="empty">Pick a preset or set features, then score — top-3 drivers explain every prediction.</div>
+  </section>
+  <section class="panel" aria-label="Model card">
+    <h2>Model card · <span id="mc-name" style="text-transform:none;letter-spacing:0">…</span></h2>
+    <div class="mgrid">
+      <div class="metric"><small>ROC-AUC</small><b class="t" id="m-auc">…</b></div>
+      <div class="metric"><small>ACCURACY</small><b id="m-acc">…</b></div>
+      <div class="metric"><small>LOG-LOSS cal / uncal</small><b><span class="t" id="m-ll">…</span><span style="font-size:.8rem;color:var(--faint)"> / <span id="m-llu">…</span></span></b></div>
+      <div class="metric"><small>BRIER</small><b id="m-brier">…</b></div>
+      <div class="metric"><small>ECE</small><b id="m-ece">…</b></div>
+      <div class="metric"><small>TRAIN / TEST · SEED</small><b style="font-size:1rem"><span id="m-n">…</span></b></div>
+    </div>
+    <div class="gates" id="gates"></div>
+    <h2>Calibration · predicted vs actual</h2>
+    <div class="collabel"><span><b class="t">━</b> mean predicted</span><span><b class="w">┃</b> actual rate</span><span style="margin-left:auto">n</span></div>
+    <div id="cal"></div>
+  </section>
+</main>
+<footer>ONNX Runtime Web · 5-fold calibrated HGB · runs 100% in your browser, no server, no key</footer>
+<div id="toasts" aria-live="polite"></div>
+<script src="vendor/ort.min.js"></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function toast(m,w){var d=document.createElement('div');d.className='toast'+(w?' warn':'');d.textContent=m;$('toasts').appendChild(d);setTimeout(function(){d.remove()},5200)}
+var PRESETS={risk:{tenure:4,spend:82.5,tickets:5,late:2,contract:'month-to-month'},loyal:{tenure:44,spend:64,tickets:0,late:0,contract:'two-year'},new:{tenure:1,spend:55,tickets:1,late:0,contract:'month-to-month'}};
+var PRETTY={tenure_months:['Tenure',0],monthly_spend:['Monthly spend',1],support_tickets:['Support tickets',2],late_payments:['Late payments',3]};
+var SESSIONS=[],SIDECAR=null,READY=false;
+document.querySelectorAll('.pbtn').forEach(function(b){b.addEventListener('click',function(){var p=PRESETS[b.dataset.p];$('f-tenure').value=p.tenure;$('f-spend').value=p.spend;$('f-tickets').value=p.tickets;$('f-late').value=p.late;$('f-contract').value=p.contract;score()})});
+function animateGauge(p){var arc=$('arc'),C=339.3,t0=null,from=parseFloat(arc.dataset.v||'0');arc.setAttribute('stroke',p>=0.5?'#E5A13D':'#2DD4BF');function fr(t){if(!t0)t0=t;var k=Math.min(1,(t-t0)/700),v=from+(p-from)*(1-Math.pow(1-k,3));arc.setAttribute('stroke-dashoffset',(C*(1-v)).toFixed(1));$('gprob').textContent=v.toFixed(3);if(k<1)requestAnimationFrame(fr);else arc.dataset.v=p}requestAnimationFrame(fr)}
+function clamp(v,lo,hi){v=+v;if(isNaN(v))v=lo;return Math.min(hi,Math.max(lo,v))}
+function readInputs(){return{num:[clamp($('f-tenure').value,0,120),clamp($('f-spend').value,0,10000),clamp($('f-tickets').value,0,100),clamp($('f-late').value,0,100)],contract:$('f-contract').value}}
+function preprocess(raw,fold){
+  var v=[],i;
+  for(i=0;i<4;i++){v.push((raw.num[i]-fold.scaler_mean[i])/fold.scaler_scale[i]);}
+  for(i=0;i<fold.ohe_categories.length;i++){v.push(raw.contract===fold.ohe_categories[i]?1:0);}
+  return v;
+}
+function explain(raw){
+  var x=[],i;
+  for(i=0;i<4;i++){x.push((raw.num[i]-SIDECAR.scaler_mean[i])/SIDECAR.scaler_scale[i]);}
+  for(i=0;i<SIDECAR.ohe_categories.length;i++){x.push(raw.contract===SIDECAR.ohe_categories[i]?1:0);}
+  var scored=x.map(function(v,i){return{i:i,c:SIDECAR.explainer_coef[i]*(v-SIDECAR.train_means[i])};});
+  scored.sort(function(a,b){return Math.abs(b.c)-Math.abs(a.c);});
+  return scored.slice(0,3).map(function(o){
+    var name=SIDECAR.feature_names[o.i],parts=name.split('__'),short=parts.length>1?parts[1]:name,feat,val;
+    if(short.indexOf('contract_type_')===0){feat='Contract';val=raw.contract;}
+    else{var pr=PRETTY[short]||[short,-1];feat=pr[0];val=pr[1]>=0?String(raw.num[pr[1]]):x[o.i].toFixed(3);}
+    return{feature:feat,value:val,contribution:o.c,effect:o.c>0?'raises risk':'lowers risk'};
+  });
+}
+function renderResult(prob,factors){
+  $('empty').hidden=true;$('result').hidden=false;animateGauge(prob);
+  var vl=$('vlabel'),churn=prob>=0.5;vl.className='vlabel '+(churn?'churn':'stay');vl.textContent=churn?'LIKELY TO CHURN':'LIKELY TO STAY';
+  var mx=Math.max.apply(null,factors.map(function(f){return Math.abs(f.contribution)}))||1;
+  $('factors').innerHTML=factors.map(function(f){var w=(Math.abs(f.contribution)/mx*100).toFixed(0);return '<div class="factor '+(f.effect==='raises risk'?'up':'dn')+'"><div class="fr"><span class="fn">'+esc(f.feature)+'</span><span class="fv">'+esc(f.value)+'</span></div><div class="bar"><i style="width:'+w+'%"></i></div><div class="ef">'+esc(f.effect)+' · '+(f.contribution>0?'+':'')+f.contribution.toFixed(3)+'</div></div>'}).join('');
+  if(churn)toast('High churn risk — consider a retention offer',true);
+}
+async function score(){
+  if(!READY){toast('Model still loading…',true);return;}
+  var btn=$('btn');btn.disabled=true;
+  var raw=readInputs();
+  try{
+    var probs=[],k;
+    for(k=0;k<5;k++){
+      var x=preprocess(raw,SIDECAR.folds[k]);
+      var t=new ort.Tensor('float32',Float32Array.from(x),[1,x.length]);
+      var out=await SESSIONS[k].run({input:t});
+      var p=null,name;
+      for(name in out){var d=out[name];if(d.dims&&d.dims.length===2&&d.dims[1]===2){p=d.data[1];break;}}
+      if(p===null||p===undefined)throw new Error('no proba output fold'+k);
+      var pc=Math.min(1-1e-12,Math.max(1e-12,p));
+      var dec=Math.log(pc/(1-pc));
+      var cal=SIDECAR.calibrators[k];
+      probs.push(1/(1+Math.exp(SIDECAR.sigmoid_sign*(cal.a*dec+cal.b))));
+    }
+    var prob=probs.reduce(function(a,b){return a+b},0)/probs.length;
+    renderResult(prob,explain(raw));
+  }catch(e){toast('Score failed: '+e.message,true)}
+  btn.disabled=false;
+}
+$('btn').addEventListener('click',score);
+function renderCard(m){
+  $('c-auc').textContent='AUC '+m.metrics.roc_auc.toFixed(3);$('mc-name').textContent=m.model;
+  $('m-auc').textContent=m.metrics.roc_auc.toFixed(4);$('m-acc').textContent=m.metrics.accuracy.toFixed(3);
+  $('m-ll').textContent=m.metrics.log_loss.toFixed(3);$('m-llu').textContent=m.metrics.log_loss_uncalibrated.toFixed(3);
+  $('m-brier').textContent=m.metrics.brier.toFixed(4);$('m-ece').textContent=m.metrics.ece.toFixed(4);
+  $('m-n').textContent=m.n_train+' / '+m.n_test+' · '+m.seed;
+  var g=$('gates');g.innerHTML='';
+  [['AUC ≥ 0.78',m.gates.auc_ge_0_78],['calibrated < uncalibrated',m.gates.calibrated_beats_uncalibrated]].forEach(function(x){var s=document.createElement('span');s.className='gate'+(x[1]?'':' fail');s.textContent=(x[1]?'PASS ':'FAIL ')+x[0];g.appendChild(s)});
+  $('cal').innerHTML=m.calibration.map(function(b){var lo=b.bin[0].toFixed(1),hi=b.bin[1].toFixed(1);return '<div class="calrow"><span>'+lo+'–'+hi+'</span><span class="cb"><i style="width:'+(b.mean_pred*100).toFixed(1)+'%"></i><u style="left:'+(b.frac_pos*100).toFixed(1)+'%"></u></span><span class="cn">'+b.n+'</span></div>'}).join('');
+}
+async function init(){
+  var btn=$('btn');
+  try{
+    if(typeof ort==='undefined')throw new Error('ort.min.js failed to load');
+    ort.env.wasm.wasmPaths='vendor/';
+    var sc=await fetch('data/sidecar.json').then(function(r){if(!r.ok)throw new Error('sidecar '+r.status);return r.json()});
+    SIDECAR=sc;
+    var k;
+    for(k=0;k<5;k++){SESSIONS.push(await ort.InferenceSession.create('models/onnx_fold'+k+'.onnx',{executionProviders:['wasm']}));}
+    var m=await fetch('data/report.json').then(function(r){if(!r.ok)throw new Error('report '+r.status);return r.json()});
+    renderCard(m);
+    READY=true;btn.disabled=false;btn.textContent='Score churn risk';
+  }catch(e){toast('Init failed: '+e.message,true);btn.textContent='Model failed to load';}
+}
+init();
+</script>
+</body>
+</html>
