@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+tests/
+demo/
+docs/
+*.md
+.gitignore
+scripts/
+demo.sh
